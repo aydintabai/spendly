@@ -42,7 +42,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ### Step 2 — Supabase Project (~15 min)
 1. Go to supabase.com → New project → name it `spendly`
-2. Copy your Project URL and anon key into `.env.example`
+2. Copy your Project URL and publishable key into `.env.example`
 3. Go to Settings → API → copy `service_role` key
 4. Go to Authentication → Providers → confirm Email enabled
 5. Go to Authentication → URL Configuration → add `http://localhost:3000/api/auth/callback` to Redirect URLs
