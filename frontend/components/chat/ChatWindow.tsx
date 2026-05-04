@@ -124,6 +124,7 @@ export function ChatWindow({ pendingPrompt, onPromptConsumed }: ChatWindowProps)
         {messages.map((msg, i) => {
           const isLastAssistant =
             i === messages.length - 1 && msg.role === 'assistant' && streaming
+          if (isLastAssistant && msg.content === '') return null
           return (
             <MessageBubble
               key={msg.id}
@@ -149,11 +150,11 @@ export function ChatWindow({ pendingPrompt, onPromptConsumed }: ChatWindowProps)
                 justifyContent: 'center',
                 fontSize: 11,
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #65a380, #a8a29e)',
+                background: '#65a380',
                 color: 'white',
               }}
             >
-              AI
+              S
             </div>
             <div
               style={{

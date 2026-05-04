@@ -88,14 +88,14 @@ export function MessageBubble({ message, userInitials, isStreaming }: MessageBub
           fontWeight: 700,
           background: isUser
             ? '#f0ebe3'
-            : 'linear-gradient(135deg, #65a380, #a8a29e)',
+            : '#65a380',
           color: isUser ? '#6b6560' : 'white',
         }}
       >
-        {isUser ? userInitials : 'AI'}
+        {isUser ? userInitials : 'S'}
       </div>
 
-      <div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
         {/* Bubble */}
         <div
           style={{
