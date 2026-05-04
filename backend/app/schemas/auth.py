@@ -17,3 +17,7 @@ class ProfileRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProfileUpdate(BaseModel):
+    full_name: str | None = None
