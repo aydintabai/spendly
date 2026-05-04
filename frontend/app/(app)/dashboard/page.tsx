@@ -16,7 +16,9 @@ import {
 import { formatCurrency, cn } from '@/lib/utils'
 
 function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7)
+  const d = new Date()
+  d.setMonth(d.getMonth() - 1)
+  return d.toISOString().slice(0, 7)
 }
 
 function formatMonthLabel(month: string): string {
@@ -143,7 +145,7 @@ export default function DashboardPage() {
         <StatCard
           label="Total Spent"
           value={totalSpent}
-          sub="this month"
+          sub="last month"
           badge={momBadge}
           glowColor="#65a380"
           loading={summaryLoading}
@@ -158,7 +160,7 @@ export default function DashboardPage() {
         <StatCard
           label="Transactions"
           value={txCount}
-          sub="this month"
+          sub="last month"
           glowColor="#22d4b3"
           loading={summaryLoading}
         />
