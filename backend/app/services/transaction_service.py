@@ -309,6 +309,169 @@ async def compare_months(
         "total_b": float(total_b),
         "delta_amount": float(delta_amount),
         "delta_pct": delta_pct,
-        "breakdown_a": [b.model_dump() for b in breakdown_a],
-        "breakdown_b": [b.model_dump() for b in breakdown_b],
+        "breakdown_a": [b.model_dump(mode="json") for b in breakdown_a],
+        "breakdown_b": [b.model_dump(mode="json") for b in breakdown_b],
     }
+
+
+async def get_recent_transactions(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    limit: int = 10,
+    category: str | None = None,
+) -> list[dict[str, Any]]:
+    conditions: list = [Transaction.user_id == user_id]
+    if category is not None:
+        conditions.append(Transaction.category == category)
+
+    stmt = (
+        select(Transaction)
+        .where(and_(*conditions))
+        .order_by(Transaction.date.desc(), Transaction.created_at.desc())
+        .limit(limit)
+    )
+    rows = (await db.execute(stmt)).scalars().all()
+
+    return [
+        {
+            "id": str(row.id),
+            "merchant_name": row.merchant_name,
+            "amount": float(row.amount),
+            "category": row.category,
+            "date": row.date.isoformat(),
+            "pending": row.pending,
+        }
+        for row in rows
+    ]
+
+
+async def detect_subscriptions(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[dict[str, Any]]:
+    month_label = func.to_char(func.date_trunc("month", Transaction.date), "YYYY-MM")
+    month_trunc = func.date_trunc("month", Transaction.date)
+
+    stmt = (
+        select(
+            Transaction.merchant_name,
+            month_label.label("month"),
+            func.count(Transaction.id).label("txn_count"),
+            func.avg(Transaction.amount).label("avg_amount"),
+            func.max(Transaction.date).label("last_seen"),
+        )
+        .where(
+            and_(
+                Transaction.user_id == user_id,
+                Transaction.amount > 0,
+                Transaction.pending.is_(False),
+            )
+        )
+        .group_by(Transaction.merchant_name, month_trunc)
+        .order_by(Transaction.merchant_name, month_trunc)
+    )
+    rows = (await db.execute(stmt)).all()
+
+    merchant_months: dict[str, list[tuple[str, float, date]]] = {}
+    for row in rows:
+        merchant_months.setdefault(row.merchant_name, []).append(
+            (row.month, float(row.avg_amount), row.last_seen)
+        )
+
+    results: list[dict[str, Any]] = []
+    for merchant, entries in merchant_months.items():
+        entries.sort(key=lambda e: e[0])
+        best_run: list[tuple[str, float, date]] = []
+        current_run: list[tuple[str, float, date]] = [entries[0]]
+
+        for prev, curr in zip(entries, entries[1:]):
+            prev_first, _ = _parse_month(prev[0])
+            curr_first, _ = _parse_month(curr[0])
+            if curr_first.month == 1:
+                expected_prev_month = 12
+                expected_prev_year = curr_first.year - 1
+            else:
+                expected_prev_month = curr_first.month - 1
+                expected_prev_year = curr_first.year
+
+            if prev_first.month == expected_prev_month and prev_first.year == expected_prev_year:
+                current_run.append(curr)
+            else:
+                if len(current_run) > len(best_run):
+                    best_run = current_run
+                current_run = [curr]
+
+        if len(current_run) > len(best_run):
+            best_run = current_run
+
+        if len(best_run) >= 3:
+            avg_cost = sum(e[1] for e in best_run) / len(best_run)
+            last_seen = max(e[2] for e in best_run)
+            results.append(
+                {
+                    "merchant_name": merchant,
+                    "estimated_monthly_cost": round(avg_cost, 2),
+                    "last_seen": last_seen.isoformat(),
+                    "months_detected": len(best_run),
+                }
+            )
+
+    results.sort(key=lambda r: r["estimated_monthly_cost"], reverse=True)
+    return results
+
+
+async def get_anomalies(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    z_score_threshold: float = 2.0,
+) -> list[dict[str, Any]]:
+    stats_stmt = (
+        select(
+            Transaction.category,
+            func.avg(Transaction.amount).label("mean_amount"),
+            func.stddev_pop(Transaction.amount).label("stddev_amount"),
+        )
+        .where(
+            and_(
+                Transaction.user_id == user_id,
+                Transaction.amount > 0,
+                Transaction.pending.is_(False),
+            )
+        )
+        .group_by(Transaction.category)
+    )
+    stats_rows = (await db.execute(stats_stmt)).all()
+    category_stats: dict[str, tuple[float, float]] = {
+        row.category: (float(row.mean_amount), float(row.stddev_amount))
+        for row in stats_rows
+        if row.stddev_amount is not None and float(row.stddev_amount) > 0
+    }
+
+    txn_stmt = select(Transaction).where(
+        and_(
+            Transaction.user_id == user_id,
+            Transaction.amount > 0,
+            Transaction.pending.is_(False),
+            Transaction.category.in_(list(category_stats.keys())),
+        )
+    )
+    txns = (await db.execute(txn_stmt)).scalars().all()
+
+    anomalies: list[dict[str, Any]] = []
+    for txn in txns:
+        mean, stddev = category_stats[txn.category]
+        z_score = (float(txn.amount) - mean) / stddev
+        if z_score > z_score_threshold:
+            anomalies.append(
+                {
+                    "id": str(txn.id),
+                    "merchant_name": txn.merchant_name,
+                    "amount": float(txn.amount),
+                    "category": txn.category,
+                    "date": txn.date.isoformat(),
+                    "z_score": round(z_score, 2),
+                }
+            )
+
+    anomalies.sort(key=lambda a: a["z_score"], reverse=True)
+    return anomalies
