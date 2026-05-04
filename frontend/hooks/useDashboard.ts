@@ -1,8 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import type { MonthlySummary, CategoryBreakdown, MonthlyTotal, PaginatedResponse, Transaction } from '@/types'
+import type { MonthlySummary, CategoryBreakdown, MonthlyTotal, PaginatedResponse, Transaction, AnalysisReport } from '@/types'
 
 export const dashboardKeys = {
   all: ['dashboard'] as const,
@@ -37,5 +37,11 @@ export function useRecentTransactions() {
   return useQuery<PaginatedResponse<Transaction>>({
     queryKey: dashboardKeys.recent(),
     queryFn: () => api.transactions.list({ page: 1, page_size: 8 }),
+  })
+}
+
+export function useAnalysis() {
+  return useMutation<AnalysisReport, Error>({
+    mutationFn: () => api.agent.analyze(),
   })
 }

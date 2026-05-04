@@ -87,3 +87,46 @@ export interface InsightResponse {
   insight: string
   generated_at: string
 }
+
+export interface TopCategory {
+  category: string
+  total: number
+  percentage: number
+  transaction_count: number
+}
+
+export interface MomChanges {
+  month_a: string
+  month_b: string
+  total_a: number
+  total_b: number
+  delta_amount: number
+  delta_pct: number | null
+  breakdown_a: Record<string, number>
+  breakdown_b: Record<string, number>
+}
+
+export interface DetectedSubscription {
+  merchant_name: string
+  estimated_monthly_cost: number
+  last_seen: string
+  months_detected: number
+}
+
+export interface Anomaly {
+  id: string
+  merchant_name: string
+  amount: number
+  category: string
+  date: string
+  z_score: number
+}
+
+export interface AnalysisReport {
+  monthly_summary: string
+  top_categories: TopCategory[]
+  mom_changes: MomChanges
+  subscriptions: DetectedSubscription[]
+  anomalies: Anomaly[]
+  recommendations: string[]
+}
