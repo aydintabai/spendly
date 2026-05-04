@@ -101,7 +101,9 @@ async def get_insight(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> InsightResponse:
-    month = date.today().strftime("%Y-%m")
+    today = date.today()
+    last_month_date = date(today.year, today.month - 1, 1) if today.month > 1 else date(today.year - 1, 12, 1)
+    month = last_month_date.strftime("%Y-%m")
 
     summary = await transaction_service.get_monthly_summary(db, user_id, month)
     categories = await transaction_service.get_spending_by_category(db, user_id, month)
@@ -132,11 +134,12 @@ async def run_analysis(
     user_id: uuid.UUID,
 ) -> AnalysisReport:
     today = date.today()
-    current_month = today.strftime("%Y-%m")
-    if today.month == 1:
-        prior_month = date(today.year - 1, 12, 1).strftime("%Y-%m")
+    last_month_date = date(today.year, today.month - 1, 1) if today.month > 1 else date(today.year - 1, 12, 1)
+    current_month = last_month_date.strftime("%Y-%m")
+    if last_month_date.month == 1:
+        prior_month = date(last_month_date.year - 1, 12, 1).strftime("%Y-%m")
     else:
-        prior_month = date(today.year, today.month - 1, 1).strftime("%Y-%m")
+        prior_month = date(last_month_date.year, last_month_date.month - 1, 1).strftime("%Y-%m")
 
     summary = await transaction_service.get_monthly_summary(db, user_id, current_month)
     categories = await transaction_service.get_spending_by_category(db, user_id, current_month)
