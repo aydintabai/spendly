@@ -531,25 +531,43 @@ executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=
 ## 8. UI/UX Specifications
 
 ### Color Palette
-- Background: `#FAF9F6` (warm off-white)
-- Surface/Cards: `#F0EDE8` (warm light gray)
-- Primary Accent: Indigo (`#6366F1`)
-- Text Primary: `#1C1C1E` (charcoal)
-- Text Secondary: `#6B7280`
-- Success/Income: `#10B981` (emerald)
-- Danger/Expense: `#EF4444`
+
+| Token | Value | Usage |
+|---|---|---|
+| `--bg-base` | `#faf9f6` | Page background |
+| `--bg-surface` | `#f2ede6` | Sidebar background |
+| `--bg-card` | `#ffffff` | Card backgrounds |
+| `--bg-hover` | `#f0ebe3` | Hover states, context panels |
+| `--border` | `rgba(28,28,30,0.08)` | Default card/table borders |
+| `--border-md` | `rgba(28,28,30,0.14)` | Hover border states |
+| `--text-1` | `#1c1c1e` | Primary text |
+| `--text-2` | `#6b6560` | Secondary text, labels |
+| `--text-3` | `#a09890` | Muted text, timestamps, monospace values |
+| `--accent` | `#65a380` | Primary accent — buttons, active nav, links |
+| `--accent-dim` | `rgba(101,163,128,0.1)` | Accent backgrounds, focus rings |
+| `--accent-2` | `#a8a29e` | Secondary accent |
+| `--green` | `#16a34a` | Income, positive trends |
+| `--red` | `#dc2626` | Expenses, negative trends |
+| `--radius` | `12px` | Card border radius |
+| `--radius-sm` | `8px` | Input, button, badge border radius |
+
+### Typography
+- **Primary font**: DM Sans (weights: 300, 400, 500, 600, 700)
+- **Monospace font**: DM Mono (weights: 400, 500) — used for all currency values, dates, percentages
 
 ### Category Badge Colors
-| Category | Color |
-|---|---|
-| Food & Dining | Orange `#F97316` |
-| Transportation | Blue `#3B82F6` |
-| Shopping | Purple `#8B5CF6` |
-| Subscriptions | Teal `#14B8A6` |
-| Entertainment | Pink `#EC4899` |
-| Health | Green `#22C55E` |
-| Gas | Yellow `#EAB308` |
-| Income | Emerald `#10B981` |
+| Category | Color | Background |
+|---|---|---|
+| Food & Dining | `#f97316` | `rgba(249,115,22,0.12)` |
+| Transportation | `#3b82f6` | `rgba(59,130,246,0.12)` |
+| Shopping | `#8b5cf6` | `rgba(139,92,246,0.12)` |
+| Subscriptions | `#14b8a6` | `rgba(20,184,166,0.12)` |
+| Entertainment | `#ec4899` | `rgba(236,72,153,0.12)` |
+| Health | `#22c55e` | `rgba(34,197,94,0.12)` |
+| Gas | `#eab308` | `rgba(234,179,8,0.12)` |
+| Income | `#16a34a` | `rgba(22,163,74,0.12)` |
+
+> All category colors are defined in `frontend/constants/categories.ts` — never hardcode inline.
 
 ### Component Library
 shadcn/ui components: `Card`, `Table`, `Badge`, `Input`, `Button`, `Select`, `ScrollArea`, `Skeleton`, `Separator`, `Tooltip`
