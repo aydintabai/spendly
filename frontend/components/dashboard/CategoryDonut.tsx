@@ -81,8 +81,8 @@ export function CategoryDonut({ data, totalSpent, loading = false }: CategoryDon
                 outerRadius={46}
                 strokeWidth={0}
                 paddingAngle={2}
-                onMouseEnter={(entry: { category?: string }) =>
-                  setHovered(entry.category ?? null)
+                onMouseEnter={(data: unknown) =>
+                  setHovered((data as CategoryBreakdown).category ?? null)
                 }
                 onMouseLeave={() => setHovered(null)}
               >

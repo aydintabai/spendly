@@ -24,7 +24,7 @@ function formatMonthLabel(month: string): string {
   return date.toLocaleString('en-US', { month: 'short' })
 }
 
-function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
+function CustomTooltip({ active, payload }: TooltipProps<number, string> & { payload?: { value?: number }[] }) {
   if (!active || !payload?.length) return null
   const value = payload[0].value ?? 0
   return (
