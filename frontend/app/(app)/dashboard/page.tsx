@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { StatCard } from '@/components/dashboard/StatCard'
 import { SpendingChart } from '@/components/dashboard/SpendingChart'
 import { CategoryDonut } from '@/components/dashboard/CategoryDonut'
@@ -37,6 +37,13 @@ export default function DashboardPage() {
 
   const { mutate: runAnalysis, isPending, isSuccess, isError, data: report, reset } = useAnalysis()
   const [dismissed, setDismissed] = useState(false)
+  const reportRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (isSuccess && report && !dismissed) {
+      reportRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [isSuccess, report, dismissed])
 
   function handleRunAnalysis() {
     setDismissed(false)
@@ -199,7 +206,7 @@ export default function DashboardPage() {
 
       {/* AI Analysis Report */}
       {isSuccess && report && !dismissed && (
-        <div className="px-8 mt-6 pb-7">
+        <div ref={reportRef} className="px-8 mt-6 pb-7">
           <AnalysisReportCard report={report} onDismiss={handleDismiss} />
         </div>
       )}
