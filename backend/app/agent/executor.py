@@ -12,7 +12,7 @@ from app.config import settings
 
 def create_executor(
     user_id: uuid.UUID,
-    model: str = "gemini-2.0-flash",
+    model: str = "gemini-flash-latest",
 ) -> CompiledStateGraph:
     llm = ChatGoogleGenerativeAI(
         model=model,

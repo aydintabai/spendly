@@ -47,3 +47,11 @@ async def get_history(
 ) -> list[ChatMessageRead]:
     messages = await agent_service.get_chat_history(db, user.id)
     return [ChatMessageRead.model_validate(m) for m in messages]
+
+
+@router.delete("/history", status_code=204)
+async def clear_history(
+    db: DBSession,
+    user: CurrentUser,
+) -> None:
+    await agent_service.clear_chat_history(db, user.id)

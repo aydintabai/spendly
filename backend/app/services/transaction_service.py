@@ -231,7 +231,7 @@ async def get_monthly_totals(
                 Transaction.date >= _months_ago(months),
             )
         )
-        .group_by(month_trunc)
+        .group_by(month_trunc, month_label)
         .order_by(month_trunc.asc())
     )
     rows = (await db.execute(stmt)).all()

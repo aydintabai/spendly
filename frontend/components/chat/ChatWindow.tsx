@@ -18,7 +18,7 @@ interface ChatWindowProps {
 
 export function ChatWindow({ pendingPrompt, onPromptConsumed }: ChatWindowProps) {
   const { user } = useAuth()
-  const { messages, streaming, sendMessage, messagesEndRef } = useChat()
+  const { messages, streaming, sendMessage, clearHistory, messagesEndRef } = useChat()
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const initials = user?.email?.slice(0, 1).toUpperCase() ?? 'U'
@@ -224,6 +224,34 @@ export function ChatWindow({ pendingPrompt, onPromptConsumed }: ChatWindowProps)
             e.currentTarget.style.boxShadow = '0 1px 3px rgba(28,28,30,0.05)'
           }}
         />
+        {messages.length > 0 && (
+          <button
+            onClick={() => void clearHistory()}
+            disabled={streaming}
+            title="Clear chat"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: 'transparent',
+              border: '1px solid rgba(28,28,30,0.12)',
+              cursor: streaming ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              alignSelf: 'flex-end',
+              opacity: streaming ? 0.4 : 0.7,
+              transition: 'opacity 0.15s',
+            }}
+            onMouseEnter={e => { if (!streaming) e.currentTarget.style.opacity = '1' }}
+            onMouseLeave={e => { if (!streaming) e.currentTarget.style.opacity = '0.7' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 9a1 1 0 001 1h6a1 1 0 001-1l1-9" stroke="#6b6560" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        )}
         <button
           onClick={() => void handleSend(undefined)}
           disabled={streaming}

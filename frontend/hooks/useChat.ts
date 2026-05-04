@@ -8,6 +8,7 @@ interface UseChatReturn {
   messages: ChatMessage[]
   streaming: boolean
   sendMessage: (text: string) => Promise<void>
+  clearHistory: () => Promise<void>
   messagesEndRef: React.RefObject<HTMLDivElement | null>
 }
 
@@ -106,5 +107,10 @@ export function useChat(): UseChatReturn {
     }
   }, [streaming])
 
-  return { messages, streaming, sendMessage, messagesEndRef }
+  const clearHistory = useCallback(async () => {
+    await api.agent.clearHistory()
+    setMessages([])
+  }, [])
+
+  return { messages, streaming, sendMessage, clearHistory, messagesEndRef }
 }

@@ -5,7 +5,7 @@ from datetime import date, datetime
 
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.executor import create_executor
@@ -34,28 +34,60 @@ async def stream_chat(
     user_id: uuid.UUID,
     message: str,
 ) -> AsyncIterator[str]:
+    import logging
+    logger = logging.getLogger(__name__)
+
     await _save_message(db, user_id, "user", message)
 
     executor = create_executor(user_id)
     collected_tokens: list[str] = []
 
-    async for msg, metadata in executor.astream(
-        {"messages": [HumanMessage(content=message)]},
-        stream_mode="messages",
-    ):
-        if (
-            metadata.get("langgraph_node") == "model"
-            and isinstance(msg, AIMessageChunk)
-            and isinstance(msg.content, str)
-            and msg.content
-            and not msg.tool_call_chunks
+    try:
+        async for msg, metadata in executor.astream(
+            {"messages": [HumanMessage(content=message)]},
+            stream_mode="messages",
         ):
-            collected_tokens.append(msg.content)
-            yield f"data: {json.dumps({'token': msg.content})}\n\n"
+            logger.debug(
+                "stream chunk: node=%s type=%s has_tool_calls=%s content=%r",
+                metadata.get("langgraph_node"),
+                type(msg).__name__,
+                bool(getattr(msg, "tool_call_chunks", None)),
+                getattr(msg, "content", "")[:80] if hasattr(msg, "content") else "",
+            )
+            if (
+                metadata.get("langgraph_node") == "model"
+                and isinstance(msg, AIMessageChunk)
+                and not msg.tool_call_chunks
+            ):
+                token: str | None = None
+                if isinstance(msg.content, str) and msg.content:
+                    token = msg.content
+                elif isinstance(msg.content, list):
+                    parts = [
+                        block["text"]
+                        for block in msg.content
+                        if isinstance(block, dict) and block.get("type") == "text" and block.get("text")
+                    ]
+                    if parts:
+                        token = "".join(parts)
+                if token:
+                    collected_tokens.append(token)
+                    yield f"data: {json.dumps({'token': token})}\n\n"
+    except Exception as exc:
+        logger.exception("stream_chat agent error: %s", exc)
+        error_token = f"Sorry, I ran into an error: {exc}"
+        yield f"data: {json.dumps({'token': error_token})}\n\n"
+        yield "data: [DONE]\n\n"
+        return
 
     full_response = "".join(collected_tokens)
+    logger.info("stream_chat complete: %d tokens, %d chars", len(collected_tokens), len(full_response))
     if full_response:
         await _save_message(db, user_id, "assistant", full_response)
+    elif not collected_tokens:
+        logger.warning("stream_chat: no tokens collected for message=%r", message)
+        fallback = "I wasn't able to generate a response. Please try again."
+        yield f"data: {json.dumps({'token': fallback})}\n\n"
 
     yield "data: [DONE]\n\n"
 
@@ -77,7 +109,7 @@ async def get_insight(
     )
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-3.1-flash",
+        model="gemini-flash-latest",
         api_key=settings.google_api_key,
     )
     response = await llm.ainvoke(
@@ -118,7 +150,7 @@ async def run_analysis(
     )
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model="gemini-flash-latest",
         api_key=settings.google_api_key,
     )
     structured_llm = llm.with_structured_output(AnalysisReport)
@@ -142,3 +174,9 @@ async def get_chat_history(
     )
     rows = (await db.execute(stmt)).scalars().all()
     return list(reversed(rows))
+
+
+async def clear_chat_history(db: AsyncSession, user_id: uuid.UUID) -> None:
+    from sqlalchemy import delete
+    await db.execute(delete(ChatMessage).where(ChatMessage.user_id == user_id))
+    await db.commit()
