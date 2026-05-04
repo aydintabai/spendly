@@ -349,13 +349,12 @@ async def detect_subscriptions(
     db: AsyncSession,
     user_id: uuid.UUID,
 ) -> list[dict[str, Any]]:
-    month_label = func.to_char(func.date_trunc("month", Transaction.date), "YYYY-MM")
     month_trunc = func.date_trunc("month", Transaction.date)
 
     stmt = (
         select(
             Transaction.merchant_name,
-            month_label.label("month"),
+            month_trunc.label("month_trunc"),
             func.count(Transaction.id).label("txn_count"),
             func.avg(Transaction.amount).label("avg_amount"),
             func.max(Transaction.date).label("last_seen"),
@@ -374,8 +373,9 @@ async def detect_subscriptions(
 
     merchant_months: dict[str, list[tuple[str, float, date]]] = {}
     for row in rows:
+        month_label = row.month_trunc.strftime("%Y-%m") if row.month_trunc else ""
         merchant_months.setdefault(row.merchant_name, []).append(
-            (row.month, float(row.avg_amount), row.last_seen)
+            (month_label, float(row.avg_amount), row.last_seen)
         )
 
     results: list[dict[str, Any]] = []
