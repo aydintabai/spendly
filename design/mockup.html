@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spendly — AI Finance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="mockdata.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-base:    #faf9f6;
+    --bg-surface: #f2ede6;
+    --bg-card:    #ffffff;
+    --bg-hover:   #f0ebe3;
+    --border:     rgba(28,28,30,0.08);
+    --border-md:  rgba(28,28,30,0.14);
+    --text-1:     #1c1c1e;
+    --text-2:     #6b6560;
+    --text-3:     #a09890;
+    --accent:     #65a380;
+    --accent-dim: rgba(101,163,128,0.1);
+    --accent-2:   #a8a29e;
+    --green:      #16a34a;
+    --red:        #dc2626;
+    --sidebar-w:  224px;
+    --radius:     12px;
+    --radius-sm:  8px;
+  }
+
+  html, body { height: 100%; background: var(--bg-base); color: var(--text-1); font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; overflow: hidden; }
+
+  #root { height: 100%; display: flex; }
+
+  /* scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+  /* noise texture overlay */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.25;
+  }
+
+  /* sidebar */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    height: 100%;
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 12px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px 20px;
+    margin-bottom: 4px;
+  }
+
+  .logo-mark {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: white; letter-spacing: -0.5px;
+    box-shadow: 0 2px 12px rgba(101,163,128,0.3);
+  }
+
+  .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+
+  .nav-section { margin-bottom: 8px; }
+  .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); padding: 0 8px; margin-bottom: 4px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--text-2);
+    font-size: 13.5px; font-weight: 500;
+    transition: all 0.15s;
+    margin-bottom: 1px;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text-1); }
+  .nav-item.active { background: var(--accent-dim); color: var(--accent); }
+  .nav-item .nav-icon { width: 16px; height: 16px; opacity: 0.9; flex-shrink: 0; }
+
+  .sidebar-spacer { flex: 1; }
+
+  .sidebar-accounts {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-bottom: 12px;
+  }
+  .account-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 8px; border-radius: 6px;
+    margin-bottom: 2px;
+  }
+  .account-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .account-name { font-size: 12px; color: var(--text-2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account-bal { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-3); }
+
+  .user-area {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 8px; border-radius: var(--radius-sm);
+    border-top: 1px solid var(--border); padding-top: 12px;
+    margin-top: 2px;
+  }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #86c9a0);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 500; }
+  .user-email { font-size: 11px; color: var(--text-3); }
+
+  /* main content */
+  .main {
+    flex: 1; height: 100%; overflow-y: auto;
+    background: var(--bg-base);
+    position: relative; z-index: 1;
+  }
+
+  .page-header {
+    padding: 28px 32px 0;
+    margin-bottom: 24px;
+  }
+  .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 3px; }
+  .page-sub { font-size: 13px; color: var(--text-2); }
+
+  /* cards */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 1px 4px rgba(28,28,30,0.06), 0 2px 12px rgba(28,28,30,0.04);
+  }
+  .card:hover { border-color: var(--border-md); box-shadow: 0 2px 8px rgba(28,28,30,0.09), 0 4px 20px rgba(28,28,30,0.06); }
+
+  /* stat cards */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; padding: 0 32px; margin-bottom: 24px;
+  }
+  .stat-card { position: relative; overflow: hidden; }
+  .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: -1px; margin-bottom: 6px; }
+  .stat-sub { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
+  .stat-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px; }
+  .stat-badge.green { background: rgba(34,197,94,0.12); color: var(--green); }
+  .stat-badge.red { background: rgba(244,63,94,0.12); color: var(--red); }
+  .stat-glow { position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; opacity: 0.12; pointer-events: none; }
+
+  /* charts row */
+  .charts-row {
+    display: grid; grid-template-columns: 1.3fr 1fr;
+    gap: 16px; padding: 0 32px; margin-bottom: 24px;
+  }
+  .chart-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .chart-sub { font-size: 12px; color: var(--text-2); margin-bottom: 20px; }
+
+  /* bar chart */
+  .bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 140px; }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bar-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; }
+  .bar {
+    width: 100%; border-radius: 5px 5px 0 0;
+    transition: opacity 0.2s, transform 0.2s;
+    cursor: default;
+    position: relative;
+    min-height: 4px;
+  }
+  .bar:hover { opacity: 0.85; }
+  .bar-label { font-size: 11px; color: var(--text-3); font-family: 'DM Mono', monospace; }
+  .bar-val { font-size: 10px; color: var(--text-2); font-family: 'DM Mono', monospace; }
+
+  /* donut chart */
+  .donut-wrap { display: flex; align-items: center; gap: 24px; }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .legend-item { display: flex; align-items: center; gap: 8px; cursor: default; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .legend-name { font-size: 12px; color: var(--text-2); flex: 1; }
+  .legend-pct { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-3); }
+  .legend-amt { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text-1); }
+
+  /* transactions */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; margin-bottom: 14px;
+  }
+  .section-title { font-size: 15px; font-weight: 600; }
+  .btn-ghost {
+    font-size: 12px; font-weight: 500; color: var(--accent);
+    background: none; border: none; cursor: pointer; padding: 4px 8px;
+    border-radius: 6px; transition: background 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-ghost:hover { background: var(--accent-dim); }
+
+  .txn-table { width: 100%; border-collapse: collapse; }
+  .txn-table th {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--text-3); text-align: left; padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .txn-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .txn-table tr:last-child td { border-bottom: none; }
+  .txn-table tbody tr { transition: background 0.12s; cursor: default; }
+  .txn-table tbody tr:hover { background: var(--bg-hover); }
+
+  .txn-merchant { font-size: 13.5px; font-weight: 500; }
+  .txn-date { font-size: 12px; color: var(--text-2); font-family: 'DM Mono', monospace; }
+  .txn-amount { font-family: 'DM Mono', monospace; font-size: 13.5px; font-weight: 500; text-align: right; }
+  .txn-amount.expense { color: var(--text-1); }
+  .txn-amount.income { color: var(--green); }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 9px; border-radius: 99px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.01em;
+  }
+
+  /* transactions page */
+  .filter-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 32px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .filter-input {
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-1); padding: 8px 12px; border-radius: var(--radius-sm);
+    font-size: 13px; outline: none; font-family: 'DM Sans', sans-serif;
+    transition: border-color 0.15s;
+    flex: 1; min-width: 180px; max-width: 240px;
+    box-shadow: 0 1px 3px rgba(28,28,30,0.05);
+  }
+  .filter-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .filter-select {
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-1); padding: 8px 12px; border-radius: var(--radius-sm);
+    font-size: 13px; outline: none; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236b6560' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    padding-right: 28px;
+    transition: border-color 0.15s;
+    box-shadow: 0 1px 3px rgba(28,28,30,0.05);
+  }
+  .filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .filter-select option { background: var(--bg-card); }
+
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-top: 1px solid var(--border);
+  }
+  .pagination-info { font-size: 12px; color: var(--text-2); }
+  .pagination-btns { display: flex; gap: 6px; }
+  .pg-btn {
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-2); padding: 5px 11px; border-radius: 6px;
+    font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s; box-shadow: 0 1px 2px rgba(28,28,30,0.05);
+  }
+  .pg-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .pg-btn:disabled { opacity: 0.4; cursor: default; }
+  .pg-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  /* AI Chat */
+  .chat-layout { display: flex; height: calc(100vh - 80px); gap: 16px; padding: 0 32px 24px; }
+
+  .chat-context {
+    width: 240px; min-width: 240px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .context-section { }
+  .context-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 8px; }
+  .context-account {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; background: var(--bg-hover);
+    border-radius: var(--radius-sm); margin-bottom: 4px;
+  }
+  .context-account-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .context-account-name { font-size: 12px; color: var(--text-2); }
+  .context-date { font-size: 12px; color: var(--text-2); background: var(--bg-hover); padding: 6px 10px; border-radius: var(--radius-sm); }
+
+  .prompt-chip {
+    width: 100%; text-align: left;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-2); padding: 9px 12px; border-radius: var(--radius-sm);
+    font-size: 12px; cursor: pointer; transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif; margin-bottom: 6px;
+    line-height: 1.4; box-shadow: 0 1px 3px rgba(28,28,30,0.05);
+  }
+  .prompt-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); box-shadow: 0 1px 6px rgba(101,163,128,0.12); }
+
+  .chat-panel {
+    flex: 1; display: flex; flex-direction: column; min-width: 0;
+  }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 4px 0;
+    display: flex; flex-direction: column; gap: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .msg-row { display: flex; gap: 10px; }
+  .msg-row.user { flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .msg-avatar.ai { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; }
+  .msg-avatar.user { background: var(--bg-hover); color: var(--text-2); font-size: 10px; }
+
+  .msg-bubble {
+    max-width: 72%; padding: 11px 14px;
+    border-radius: 12px; font-size: 13.5px; line-height: 1.6;
+  }
+  .msg-bubble.ai { background: var(--bg-card); border: 1px solid var(--border); border-top-left-radius: 3px; color: var(--text-1); box-shadow: 0 1px 4px rgba(28,28,30,0.07); }
+  .msg-bubble.user { background: var(--accent); color: white; border-top-right-radius: 3px; box-shadow: 0 2px 8px rgba(101,163,128,0.25); }
+  .msg-time { font-size: 10px; color: var(--text-3); margin-top: 4px; display: block; }
+  .msg-row.user .msg-time { text-align: right; }
+
+  .msg-content strong { font-weight: 600; }
+  .msg-content ul { padding-left: 16px; margin: 6px 0; }
+  .msg-content li { margin-bottom: 3px; }
+
+  .chat-input-area {
+    padding-top: 14px; border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-1); padding: 11px 14px; border-radius: 10px;
+    font-size: 13.5px; outline: none; resize: none; min-height: 44px; max-height: 120px;
+    font-family: 'DM Sans', sans-serif; line-height: 1.5;
+    transition: border-color 0.15s; box-shadow: 0 1px 3px rgba(28,28,30,0.05);
+  }
+  .chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .chat-input::placeholder { color: var(--text-3); }
+
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--accent); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: opacity 0.15s, transform 0.1s;
+    align-self: flex-end;
+  }
+  .send-btn:hover { opacity: 0.88; }
+  .send-btn:active { transform: scale(0.95); }
+
+  .typing-indicator { display: flex; align-items: center; gap: 5px; padding: 10px 14px; }
+  .typing-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-3);
+    animation: typing-bounce 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* page transitions */
+  .page-enter { animation: fadeSlide 0.2s ease forwards; }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* empty state */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; color: var(--text-3); }
+  .empty-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--bg-hover); display: flex; align-items: center; justify-content: center; }
+  .empty-title { font-size: 14px; font-weight: 600; color: var(--text-2); }
+  .empty-sub { font-size: 13px; text-align: center; max-width: 260px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+const D = window.SPENDLY_DATA;
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+function fmt(n, abs = false) {
+  const v = abs ? Math.abs(n) : n;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(v);
+}
+
+function fmtDate(s) {
+  const d = new Date(s + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function CategoryBadge({ category }) {
+  const cat = D.categories[category] || { color: '#8b93a8', bg: 'rgba(139,147,168,0.15)' };
+  return (
+    <span className="badge" style={{ color: cat.color, backgroundColor: cat.bg }}>
+      {category}
+    </span>
+  );
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function Sidebar({ page, setPage }) {
+  const navItems = [
+    { id: 'dashboard',     label: 'Dashboard',     icon: DashIcon },
+    { id: 'transactions',  label: 'Transactions',  icon: TxnIcon },
+    { id: 'chat',          label: 'AI Chat',       icon: ChatIcon },
+    { id: 'settings',      label: 'Settings',      icon: SettingsIcon },
+  ];
+  const accountColors = ['#7c6af7', '#22d4b3', '#f97316'];
+
+  return (
+    <div className="sidebar">
+      <div className="logo">
+        <div className="logo-mark">S</div>
+        <span className="logo-text">Spendly</span>
+      </div>
+
+      <div className="nav-section">
+        <div className="nav-label">Menu</div>
+        {navItems.map(item => (
+          <div
+            key={item.id}
+            className={`nav-item ${page === item.id ? 'active' : ''}`}
+            onClick={() => setPage(item.id)}
+          >
+            <item.icon className="nav-icon" active={page === item.id} />
+            {item.label}
+          </div>
+        ))}
+      </div>
+
+      <div className="sidebar-spacer" />
+
+      <div className="sidebar-accounts">
+        <div className="nav-label" style={{marginBottom: 8}}>Accounts</div>
+        {D.user.accounts.map((acc, i) => (
+          <div className="account-item" key={acc.id}>
+            <div className="account-dot" style={{ background: accountColors[i] }} />
+            <span className="account-name">{acc.name}</span>
+            <span className="account-bal" style={{ color: acc.balance < 0 ? 'var(--red)' : 'var(--text-3)' }}>
+              {fmt(acc.balance)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="user-area">
+        <div className="avatar">{D.user.avatar}</div>
+        <div>
+          <div className="user-name">{D.user.name}</div>
+          <div className="user-email">{D.user.email}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function Dashboard({ setPage }) {
+  const s = D.stats;
+  const maxBar = Math.max(...D.monthlySpending.map(m => m.amount));
+  const [hoveredBar, setHoveredBar] = useState(null);
+  const [hoveredSlice, setHoveredSlice] = useState(null);
+
+  // Donut chart math
+  const size = 120;
+  const cx = size / 2, cy = size / 2, r = 46, sw = 14;
+  let cumPct = 0;
+  const slices = D.categoryBreakdown.map(d => {
+    const start = cumPct;
+    cumPct += d.pct;
+    return { ...d, start, end: cumPct };
+  });
+
+  function polarToXY(pct) {
+    const angle = (pct / 100) * 2 * Math.PI - Math.PI / 2;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  }
+  function slicePath(startPct, endPct) {
+    const s = polarToXY(startPct), e = polarToXY(endPct);
+    const large = (endPct - startPct) > 50 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+  }
+
+  return (
+    <div className="page-enter">
+      <div className="page-header">
+        <div className="page-title">Dashboard</div>
+        <div className="page-sub">May 2026 · 3 accounts connected</div>
+      </div>
+
+      {/* Stats row */}
+      <div className="stats-row">
+        <div className="card stat-card">
+          <div className="stat-glow" style={{ background: 'var(--accent)' }} />
+          <div className="stat-label">Total Spent This Month</div>
+          <div className="stat-value">{fmt(s.totalSpentThisMonth, true)}</div>
+          <div className="stat-sub">
+            <span className={`stat-badge ${s.momChange < 0 ? 'green' : 'red'}`}>
+              {s.momChange < 0 ? '↓' : '↑'} {Math.abs(s.momChange)}%
+            </span>
+            <span>vs last month</span>
+          </div>
+        </div>
+
+        <div className="card stat-card">
+          <div className="stat-glow" style={{ background: '#a855f7' }} />
+          <div className="stat-label">Biggest Category</div>
+          <div className="stat-value" style={{fontSize: '22px', marginTop: 4}}>{s.biggestCategory}</div>
+          <div className="stat-sub">
+            <CategoryBadge category={s.biggestCategory} />
+            <span style={{marginLeft: 4}}>{fmt(s.biggestCategoryAmount, true)}</span>
+          </div>
+        </div>
+
+        <div className="card stat-card">
+          <div className="stat-glow" style={{ background: '#22d4b3' }} />
+          <div className="stat-label">Transactions</div>
+          <div className="stat-value">{s.transactionCount}</div>
+          <div className="stat-sub">This month so far</div>
+        </div>
+
+        <div className="card stat-card">
+          <div className="stat-glow" style={{ background: '#f97316' }} />
+          <div className="stat-label">Month-over-Month</div>
+          <div className="stat-value" style={{ color: s.momChange < 0 ? 'var(--green)' : 'var(--red)' }}>
+            {s.momChange < 0 ? '↓' : '↑'}{Math.abs(s.momChange)}%
+          </div>
+          <div className="stat-sub">
+            <span>{fmt(s.totalSpentLastMonth, true)} last month</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts row */}
+      <div className="charts-row">
+        {/* Bar chart */}
+        <div className="card">
+          <div className="chart-title">Monthly Spending</div>
+          <div className="chart-sub">Last 6 months</div>
+          <div className="bar-chart">
+            {D.monthlySpending.map((m, i) => {
+              const isLast = i === D.monthlySpending.length - 1;
+              const pct = m.amount / maxBar;
+              const isHov = hoveredBar === i;
+              return (
+                <div
+                  className="bar-group"
+                  key={m.month}
+                  onMouseEnter={() => setHoveredBar(i)}
+                  onMouseLeave={() => setHoveredBar(null)}
+                >
+                  {isHov && (
+                    <div style={{
+                      fontSize: 10, fontFamily: "'DM Mono', monospace", color: 'var(--text-1)',
+                      background: 'var(--bg-hover)', padding: '2px 5px', borderRadius: 4,
+                      marginBottom: 2, whiteSpace: 'nowrap'
+                    }}>${m.amount.toLocaleString()}</div>
+                  )}
+                  <div className="bar-wrap">
+                    <div
+                      className="bar"
+                      style={{
+                        height: `${pct * 100}%`,
+                        background: isLast
+                          ? 'linear-gradient(to top, var(--accent), #86c9a0)'
+                          : isHov
+                            ? 'rgba(101,163,128,0.45)'
+                            : 'rgba(101,163,128,0.2)',
+                        minHeight: 4,
+                      }}
+                    />
+                  </div>
+                  <span className="bar-label">{m.month}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Donut chart */}
+        <div className="card">
+          <div className="chart-title">Spending by Category</div>
+          <div className="chart-sub">May 2026</div>
+          <div className="donut-wrap">
+            <svg width={size} height={size} className="donut-svg">
+              {slices.map((slice, i) => {
+                const cat = D.categories[slice.category] || { color: '#8b93a8' };
+                const isHov = hoveredSlice === i;
+                return (
+                  <path
+                    key={slice.category}
+                    d={slicePath(slice.start, slice.end)}
+                    fill="none"
+                    stroke={cat.color}
+                    strokeWidth={isHov ? sw + 3 : sw}
+                    strokeLinecap="round"
+                    opacity={hoveredSlice !== null && !isHov ? 0.35 : 1}
+                    style={{ transition: 'all 0.15s' }}
+                    onMouseEnter={() => setHoveredSlice(i)}
+                    onMouseLeave={() => setHoveredSlice(null)}
+                  />
+                );
+              })}
+              <text x={cx} y={cy - 4} textAnchor="middle" fill="var(--text-1)" fontSize="15" fontWeight="700" fontFamily="DM Mono, monospace">
+                ${(hoveredSlice !== null ? D.categoryBreakdown[hoveredSlice].amount : 1050)}
+              </text>
+              <text x={cx} y={cy + 13} textAnchor="middle" fill="var(--text-3)" fontSize="9" fontFamily="DM Sans, sans-serif">
+                {hoveredSlice !== null ? D.categoryBreakdown[hoveredSlice].category : 'total spend'}
+              </text>
+            </svg>
+            <div className="donut-legend">
+              {D.categoryBreakdown.slice(0, 6).map((d, i) => {
+                const cat = D.categories[d.category] || { color: '#8b93a8' };
+                return (
+                  <div className="legend-item" key={d.category} onMouseEnter={() => setHoveredSlice(i)} onMouseLeave={() => setHoveredSlice(null)}>
+                    <div className="legend-dot" style={{ background: cat.color }} />
+                    <span className="legend-name">{d.category}</span>
+                    <span className="legend-pct">{d.pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent transactions */}
+      <div className="section-header">
+        <div className="section-title">Recent Transactions</div>
+        <button className="btn-ghost" onClick={() => setPage('transactions')}>View all →</button>
+      </div>
+      <div style={{ padding: '0 32px 32px' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table className="txn-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Merchant</th>
+                <th>Category</th>
+                <th style={{ textAlign: 'right' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {D.transactions.slice(0, 8).map(t => (
+                <tr key={t.id}>
+                  <td><span className="txn-date">{fmtDate(t.date)}</span></td>
+                  <td><span className="txn-merchant">{t.merchant}</span></td>
+                  <td><CategoryBadge category={t.category} /></td>
+                  <td>
+                    <span className={`txn-amount ${t.amount > 0 ? 'income' : 'expense'}`}>
+                      {t.amount > 0 ? '+' : ''}{fmt(t.amount)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Transactions Page ─────────────────────────────────────────────────────────
+function Transactions() {
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
+
+  const allCats = ['All', ...Object.keys(D.categories)];
+
+  const filtered = D.transactions.filter(t => {
+    const matchSearch = t.merchant.toLowerCase().includes(search.toLowerCase());
+    const matchCat = categoryFilter === 'All' || t.category === categoryFilter;
+    return matchSearch && matchCat;
+  });
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const pageItems = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  return (
+    <div className="page-enter">
+      <div className="page-header">
+        <div className="page-title">Transactions</div>
+        <div className="page-sub">{filtered.length} transactions · May 2026</div>
+      </div>
+
+      <div className="filter-bar">
+        <input
+          className="filter-input"
+          type="text"
+          placeholder="Search merchants…"
+          value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
+        />
+        <select
+          className="filter-select"
+          value={categoryFilter}
+          onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}
+        >
+          {allCats.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <div style={{ padding: '0 32px 32px' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {pageItems.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">
+                <SearchIcon />
+              </div>
+              <div className="empty-title">No transactions found</div>
+              <div className="empty-sub">Try adjusting your search or filters</div>
+            </div>
+          ) : (
+            <>
+              <table className="txn-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Merchant</th>
+                    <th>Category</th>
+                    <th style={{ textAlign: 'right' }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map(t => (
+                    <tr key={t.id}>
+                      <td><span className="txn-date">{fmtDate(t.date)}</span></td>
+                      <td><span className="txn-merchant">{t.merchant}</span></td>
+                      <td><CategoryBadge category={t.category} /></td>
+                      <td>
+                        <span className={`txn-amount ${t.amount > 0 ? 'income' : 'expense'}`}>
+                          {t.amount > 0 ? '+' : ''}{fmt(t.amount)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="pagination">
+                <div className="pagination-info">
+                  Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, filtered.length)} of {filtered.length}
+                </div>
+                <div className="pagination-btns">
+                  <button className="pg-btn" onClick={() => setPage(p => p - 1)} disabled={page === 1}>← Prev</button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} className={`pg-btn ${page === i + 1 ? 'active' : ''}`} onClick={() => setPage(i + 1)}>
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button className="pg-btn" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>Next →</button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── AI Chat ───────────────────────────────────────────────────────────────────
+const AI_RESPONSES = {
+  "how much did i spend on food last month": "In April 2026, you spent **$284.04** on food across **7 transactions**.\n\nHere's the breakdown:\n• Whole Foods Market — $94.32\n• Blue Apron — $72.00\n• Trader Joe's — $58.22\n• Sweetgreen — $16.80\n• Chipotle — $13.95\n• Dimes Square Deli — $21.30\n• Starbucks — $7.45\n\nFood is your second-largest category, behind Shopping.",
+  "what's my biggest recurring expense": "Your biggest recurring expenses are:\n\n1. **Netflix** — $17.99/mo\n2. **Apple One** — $21.95/mo\n3. **Hulu** — $14.99/mo\n4. **Spotify** — $10.99/mo\n5. **OpenAI ChatGPT** — $20.00/mo\n\nTotal subscriptions: **$85.92/month** — that's about 6% of your monthly spend.",
+  "compare my spending this month vs last month": "Here's your month-over-month comparison:\n\n| Category | Apr | May (so far) |\n|---|---|---|\n| Food | $284 | $111 |\n| Shopping | $268 | $67 |\n| Subscriptions | $86 | $18 |\n| Transport | $71 | $13 |\n\nMay total so far: **$1,420** vs April's **$3,210**. You're on track to spend less this month — great job! 🎉",
+  "which subscriptions am i paying for": "You have **5 active subscriptions** totaling **$85.92/month**:\n\n• Netflix — $17.99\n• Apple One — $21.95\n• Spotify — $10.99\n• Hulu — $14.99\n• OpenAI ChatGPT — $20.00\n\nThat's **$1,031.04/year**. Want me to flag any that look unused?",
+};
+
+function processMessage(text) {
+  const key = text.toLowerCase().replace(/[?!.,]/g, '').trim();
+  for (const [q, a] of Object.entries(AI_RESPONSES)) {
+    if (key.includes(q.split(' ').slice(0, 4).join(' '))) return a;
+  }
+  return "I've analyzed your transactions. Based on your spending patterns, I can see you've been consistent with essentials while keeping discretionary spending moderate. Would you like me to dive into a specific category or time period?";
+}
+
+function renderMsgContent(text) {
+  const lines = text.split('\n');
+  return lines.map((line, i) => {
+    if (line.startsWith('|')) {
+      // table row
+      const cells = line.split('|').filter(c => c.trim());
+      if (cells.every(c => /^[-\s]+$/.test(c))) return null;
+      return (
+        <div key={i} style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '4px 0' }}>
+          {cells.map((c, j) => (
+            <span key={j} style={{ flex: 1, fontSize: 12, fontFamily: "'DM Mono', monospace", color: j === 0 ? 'var(--text-2)' : 'var(--text-1)' }}>
+              {c.trim()}
+            </span>
+          ))}
+        </div>
+      );
+    }
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    const rendered = parts.map((p, j) => j % 2 === 1 ? <strong key={j}>{p}</strong> : p);
+    return <div key={i} style={{ marginBottom: 2 }}>{rendered}</div>;
+  }).filter(Boolean);
+}
+
+function ChatPage() {
+  const [messages, setMessages] = useState(D.chatHistory);
+  const [input, setInput] = useState('');
+  const [thinking, setThinking] = useState(false);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  function scrollToBottom() {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.parentElement.scrollTop = messagesEndRef.current.offsetTop;
+    }
+  }
+
+  useEffect(() => { scrollToBottom(); }, [messages, thinking]);
+
+  function sendMessage(text) {
+    if (!text.trim() || thinking) return;
+    const userMsg = { role: 'user', content: text, time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) };
+    setMessages(m => [...m, userMsg]);
+    setInput('');
+    setThinking(true);
+    setTimeout(() => {
+      const aiMsg = {
+        role: 'assistant',
+        content: processMessage(text),
+        time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      };
+      setMessages(m => [...m, aiMsg]);
+      setThinking(false);
+    }, 1400 + Math.random() * 600);
+  }
+
+  return (
+    <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="page-header">
+        <div className="page-title">AI Chat</div>
+        <div className="page-sub">Ask anything about your finances</div>
+      </div>
+
+      <div className="chat-layout">
+        {/* Context panel */}
+        <div className="chat-context">
+          <div className="card context-section">
+            <div className="context-label">Analyzing</div>
+            {D.user.accounts.map((acc, i) => (
+              <div className="context-account" key={acc.id}>
+                <div className="context-account-dot" style={{ background: ['#7c6af7','#22d4b3','#f97316'][i] }} />
+                <span className="context-account-name">{acc.name}</span>
+              </div>
+            ))}
+            <div style={{ marginTop: 10 }}>
+              <div className="context-label">Date Range</div>
+              <div className="context-date">Apr 1 — May 2, 2026</div>
+            </div>
+          </div>
+
+          <div>
+            <div className="context-label" style={{ marginBottom: 8 }}>Suggested</div>
+            {D.suggestedPrompts.map((p, i) => (
+              <button key={i} className="prompt-chip" onClick={() => sendMessage(p)}>
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat panel */}
+        <div className="card chat-panel" style={{ padding: 16 }}>
+          <div className="chat-messages">
+            {messages.map((msg, i) => (
+              <div key={i} className={`msg-row ${msg.role}`}>
+                <div className={`msg-avatar ${msg.role}`}>
+                  {msg.role === 'assistant' ? 'AI' : D.user.avatar}
+                </div>
+                <div>
+                  <div className={`msg-bubble ${msg.role}`}>
+                    <div className="msg-content">{renderMsgContent(msg.content)}</div>
+                  </div>
+                  <span className="msg-time">{msg.time}</span>
+                </div>
+              </div>
+            ))}
+            {thinking && (
+              <div className="msg-row assistant">
+                <div className="msg-avatar ai">AI</div>
+                <div>
+                  <div className="msg-bubble ai">
+                    <div className="typing-indicator">
+                      <div className="typing-dot" />
+                      <div className="typing-dot" />
+                      <div className="typing-dot" />
+                      <span style={{ marginLeft: 4, fontSize: 12, color: 'var(--text-3)' }}>Spendly is thinking…</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="chat-input-area">
+            <textarea
+              ref={inputRef}
+              className="chat-input"
+              placeholder="Ask about your spending…"
+              value={input}
+              rows={1}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); } }}
+            />
+            <button className="send-btn" onClick={() => sendMessage(input)}>
+              <SendIcon />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Settings Page ─────────────────────────────────────────────────────────────
+function Settings() {
+  return (
+    <div className="page-enter">
+      <div className="page-header">
+        <div className="page-title">Settings</div>
+        <div className="page-sub">Manage your account and preferences</div>
+      </div>
+      <div style={{ padding: '0 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {[
+          { label: 'Profile', sub: 'Name, email, and avatar' },
+          { label: 'Connected Accounts', sub: '3 accounts linked via Plaid' },
+          { label: 'Notifications', sub: 'Spending alerts and weekly reports' },
+          { label: 'Categories', sub: 'Customize category rules and colors' },
+          { label: 'Export Data', sub: 'Download your transactions as CSV' },
+        ].map(item => (
+          <div key={item.label} className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 2 }}>{item.label}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-2)' }}>{item.sub}</div>
+            </div>
+            <span style={{ color: 'var(--text-3)', fontSize: 16 }}>›</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Icons ─────────────────────────────────────────────────────────────────────
+function DashIcon({ className, active }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity={active ? 1 : 0.7} />
+      <rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor" opacity={active ? 0.6 : 0.4} />
+      <rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity={active ? 0.6 : 0.4} />
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor" opacity={active ? 0.3 : 0.2} />
+    </svg>
+  );
+}
+function TxnIcon({ className, active }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none">
+      <rect x="1" y="3" width="14" height="1.5" rx="0.75" fill="currentColor" opacity="0.9" />
+      <rect x="1" y="7" width="10" height="1.5" rx="0.75" fill="currentColor" opacity="0.6" />
+      <rect x="1" y="11" width="12" height="1.5" rx="0.75" fill="currentColor" opacity="0.4" />
+    </svg>
+  );
+}
+function ChatIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none">
+      <path d="M2 3a1 1 0 011-1h10a1 1 0 011 1v7a1 1 0 01-1 1H5l-3 2V3z" fill="currentColor" opacity="0.8" />
+    </svg>
+  );
+}
+function SettingsIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" opacity="0.7" />
+    </svg>
+  );
+}
+function SendIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M14 8L2 2l3 6-3 6 12-6z" fill="white" />
+    </svg>
+  );
+}
+function SearchIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <circle cx="7.5" cy="7.5" r="5" stroke="var(--text-3)" strokeWidth="1.5" />
+      <path d="M11.5 11.5L15 15" stroke="var(--text-3)" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// ── Tweaks ────────────────────────────────────────────────────────────────────
+const TWEAK_DEFAULS = /*EDITMODE-BEGIN*/{
+  "accentColor": "#65a380",
+  "accentColor2": "#a8a29e",
+  "bgBase": "#faf8f5",
+  "fontScale": 1,
+  "density": "comfortable"
+}/*EDITMODE-END*/;
+
+function TweaksWrapper({ children }) {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULS);
+
+  useEffect(() => {
+    if (!tweaks) return;
+    document.documentElement.style.setProperty('--accent', tweaks.accentColor);
+    document.documentElement.style.setProperty('--accent-dim', tweaks.accentColor + '1a');
+    document.documentElement.style.setProperty('--accent-2', tweaks.accentColor2);
+    document.documentElement.style.setProperty('--bg-base', tweaks.bgBase);
+    document.documentElement.style.setProperty('--bg-surface', '#f2ede6');
+    document.documentElement.style.setProperty('--bg-card', '#ffffff');
+    document.documentElement.style.setProperty('--bg-hover', '#f0ebe3');
+    document.documentElement.style.setProperty('--border', 'rgba(28,28,30,0.08)');
+    document.documentElement.style.setProperty('--border-md', 'rgba(28,28,30,0.14)');
+    document.documentElement.style.setProperty('--text-1', '#1c1c1e');
+    document.documentElement.style.setProperty('--text-2', '#6b6560');
+    document.documentElement.style.setProperty('--text-3', '#a09890');
+    document.documentElement.style.setProperty('--green', '#16a34a');
+    document.documentElement.style.setProperty('--red', '#dc2626');
+    document.documentElement.style.setProperty('--sidebar-w', tweaks.density === 'compact' ? '192px' : '224px');
+    document.documentElement.style.fontSize = (tweaks.fontScale * 14) + 'px';
+  }, [tweaks]);
+
+  return (
+    <>
+      {children}
+      <TweaksPanel title="Spendly Tweaks">
+        <TweakSection label="Colors">
+          <TweakColor label="Accent" id="accentColor" value={tweaks.accentColor} onChange={v => setTweak('accentColor', v)} />
+          <TweakColor label="Secondary Accent" id="accentColor2" value={tweaks.accentColor2} onChange={v => setTweak('accentColor2', v)} />
+          <TweakColor label="Background" id="bgBase" value={tweaks.bgBase} onChange={v => setTweak('bgBase', v)} />
+        </TweakSection>
+        <TweakSection label="Layout">
+          <TweakSlider label="Font Scale" id="fontScale" min={0.8} max={1.2} step={0.05} value={tweaks.fontScale} onChange={v => setTweak('fontScale', v)} />
+          <TweakRadio label="Density" id="density" value={tweaks.density} options={['compact','comfortable']} onChange={v => setTweak('density', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('dashboard');
+
+  const renderPage = () => {
+    switch (page) {
+      case 'dashboard':     return <Dashboard setPage={setPage} />;
+      case 'transactions':  return <Transactions />;
+      case 'chat':          return <ChatPage />;
+      case 'settings':      return <Settings />;
+      default:              return <Dashboard setPage={setPage} />;
+    }
+  };
+
+  return (
+    <TweaksWrapper>
+      <Sidebar page={page} setPage={setPage} />
+      <div className="main">
+        {renderPage()}
+      </div>
+    </TweaksWrapper>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
