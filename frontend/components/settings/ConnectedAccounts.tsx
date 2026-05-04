@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import type { Account } from '@/types'
+import { usePlaidConnect } from '@/hooks/useSettings'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency } from '@/lib/utils'
@@ -20,7 +20,7 @@ const CARD_STYLE: React.CSSProperties = {
 }
 
 export function ConnectedAccounts({ accounts, isLoading }: ConnectedAccountsProps) {
-  const [showComingSoon, setShowComingSoon] = useState(false)
+  const { handleConnect, status, statusMessage, isLoading: plaidLoading } = usePlaidConnect()
 
   return (
     <div style={CARD_STYLE}>
@@ -31,48 +31,74 @@ export function ConnectedAccounts({ accounts, isLoading }: ConnectedAccountsProp
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           <button
-            onClick={() => setShowComingSoon(true)}
+            onClick={() => void handleConnect()}
+            disabled={plaidLoading}
             style={{
               height: 34,
               padding: '0 14px',
               fontSize: 13,
               fontWeight: 500,
-              color: '#1c1c1e',
+              color: plaidLoading ? '#a09890' : '#1c1c1e',
               background: '#ffffff',
               border: '1px solid rgba(28,28,30,0.14)',
               borderRadius: 8,
-              cursor: 'pointer',
+              cursor: plaidLoading ? 'not-allowed' : 'pointer',
               whiteSpace: 'nowrap',
               transition: 'background 0.15s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = '#f7f3ee')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = '#ffffff')}
+            onMouseEnter={(e) => { if (!plaidLoading) e.currentTarget.style.background = '#f7f3ee' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff' }}
           >
-            Connect Bank Account
+            {plaidLoading ? (
+              <>
+                <svg
+                  className="animate-spin"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3" />
+                  <path d="M7 1.5A5.5 5.5 0 0112.5 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                {status === 'connecting' ? 'Connecting…' : 'Loading…'}
+              </>
+            ) : (
+              'Connect Bank Account'
+            )}
           </button>
-          {showComingSoon && (
+          {status === 'success' && (
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                background: 'rgba(234,179,8,0.08)',
-                border: '1px solid rgba(234,179,8,0.25)',
+                background: 'rgba(101,163,128,0.08)',
+                border: '1px solid rgba(101,163,128,0.25)',
                 borderRadius: 8,
                 padding: '7px 10px',
                 fontSize: 12,
-                color: '#92710a',
+                color: '#3d7a5c',
                 maxWidth: 260,
               }}
             >
-              <span>Plaid bank connection coming soon — available in Step 16.</span>
-              <button
-                onClick={() => setShowComingSoon(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#92710a', padding: 0, lineHeight: 1, flexShrink: 0 }}
-                aria-label="Dismiss"
-              >
-                ×
-              </button>
+              {statusMessage}
+            </div>
+          )}
+          {status === 'error' && (
+            <div
+              style={{
+                background: 'rgba(239,68,68,0.06)',
+                border: '1px solid rgba(239,68,68,0.2)',
+                borderRadius: 8,
+                padding: '7px 10px',
+                fontSize: 12,
+                color: '#dc2626',
+                maxWidth: 260,
+              }}
+            >
+              {statusMessage}
             </div>
           )}
         </div>

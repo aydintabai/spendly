@@ -130,3 +130,17 @@ export interface AnalysisReport {
   anomalies: Anomaly[]
   recommendations: string[]
 }
+
+export interface PlaidItemRead {
+  id: string
+  user_id: string
+  institution_id: string | null
+  institution_name: string | null
+}
+
+export interface SyncResponse {
+  added: number
+  modified: number
+  removed: number
+  has_more: boolean
+}
