@@ -77,7 +77,7 @@ async def get_insight(
     )
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+        model="gemini-3.1-flash",
         api_key=settings.google_api_key,
     )
     response = await llm.ainvoke(
