@@ -1,3 +1,4 @@
+from app.schemas.auth import ProfileCreate, ProfileRead
 from app.schemas.common import PaginatedResponse, ErrorResponse
 from app.schemas.transaction import (
     TransactionRead,
@@ -11,6 +12,8 @@ from app.schemas.plaid import LinkTokenResponse, ExchangeTokenRequest, PlaidItem
 from app.schemas.agent import ChatRequest, ChatMessageRead, InsightResponse, AnalysisReport
 
 __all__ = [
+    "ProfileCreate",
+    "ProfileRead",
     "PaginatedResponse",
     "ErrorResponse",
     "TransactionRead",
