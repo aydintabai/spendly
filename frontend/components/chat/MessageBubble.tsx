@@ -8,10 +8,16 @@ interface MessageBubbleProps {
   isStreaming?: boolean
 }
 
+function renderInline(text: string): React.ReactNode[] {
+  const parts = text.split(/\*\*(.*?)\*\*/g)
+  return parts.map((p, j) => (j % 2 === 1 ? <strong key={j}>{p}</strong> : p))
+}
+
 function renderContent(text: string): React.ReactNode[] {
   const lines = text.split('\n')
   return lines
     .map((line, i) => {
+      // Table row
       if (line.startsWith('|')) {
         const cells = line.split('|').filter(c => c.trim())
         if (cells.every(c => /^[-\s]+$/.test(c))) return null
@@ -41,13 +47,43 @@ function renderContent(text: string): React.ReactNode[] {
           </div>
         )
       }
-      const parts = line.split(/\*\*(.*?)\*\*/g)
-      const rendered = parts.map((p, j) =>
-        j % 2 === 1 ? <strong key={j}>{p}</strong> : p,
-      )
+      // Headings: ### ## #
+      const headingMatch = line.match(/^(#{1,3})\s+(.+)/)
+      if (headingMatch) {
+        const level = headingMatch[1].length
+        const sizes = [17, 15, 14]
+        return (
+          <div
+            key={i}
+            style={{
+              fontSize: sizes[level - 1],
+              fontWeight: 700,
+              marginTop: i === 0 ? 0 : 10,
+              marginBottom: 2,
+              color: '#1c1c1e',
+            }}
+          >
+            {renderInline(headingMatch[2])}
+          </div>
+        )
+      }
+      // Bullet list: * or -
+      const bulletMatch = line.match(/^[\*\-]\s+(.+)/)
+      if (bulletMatch) {
+        return (
+          <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 2, paddingLeft: 4 }}>
+            <span style={{ color: '#65a380', flexShrink: 0, marginTop: 1 }}>•</span>
+            <span>{renderInline(bulletMatch[1])}</span>
+          </div>
+        )
+      }
+      // Empty line → small spacer
+      if (line.trim() === '') {
+        return <div key={i} style={{ height: 6 }} />
+      }
       return (
         <div key={i} style={{ marginBottom: 2 }}>
-          {rendered}
+          {renderInline(line)}
         </div>
       )
     })
