@@ -60,6 +60,7 @@ A single authenticated user (demo context: the developer). Built for a recruiter
 | Auth | Supabase Auth (email/password) |
 | Environment | python-dotenv / Next.js `.env.local` |
 | Dev Server | Uvicorn (backend) + Next.js dev (frontend) |
+| DB Connection | Session Pooler (IPv4 compatible) via `postgresql+asyncpg://` |
 
 ---
 

@@ -21,8 +21,8 @@ Create `.env.example` — document every key you'll need:
 ```
 # Supabase
 SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_PUBLISHABLE_KEY=        # sb_publishable_xxx — replaces legacy anon key
+SUPABASE_SECRET_KEY=             # sb_secret_xxx — replaces legacy service_role key
 
 # Google Gemini
 GOOGLE_API_KEY=
@@ -34,7 +34,7 @@ PLAID_ENV=sandbox
 
 # Frontend
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=   # sb_publishable_xxx — safe to expose in browser
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
@@ -42,7 +42,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ### Step 2 — Supabase Project (~15 min)
 1. Go to supabase.com → New project → name it `spendly`
-2. Copy your Project URL and publishable key into `.env.example`
+2. Copy your Project URL and anon key into `.env.example`
 3. Go to Settings → API → copy `service_role` key
 4. Go to Authentication → Providers → confirm Email enabled
 5. Go to Authentication → URL Configuration → add `http://localhost:3000/api/auth/callback` to Redirect URLs
@@ -195,11 +195,13 @@ uv run uvicorn app.main:app --reload --port 8000
 uv run alembic init alembic
 ```
 
-Update `alembic/env.py` — import Base and all models:
+Update `alembic/env.py` — import Base and all models, use sync URL for Alembic:
 ```python
-from app.models import Base  # triggers all model imports via __init__.py
+from app.models import Base
 from app.config import settings
-config.set_main_option("sqlalchemy.url", settings.database_url)
+
+# Alembic needs sync driver — swap asyncpg for psycopg2
+sync_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
 target_metadata = Base.metadata
 ```
 
