@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { useProfile } from '@/hooks/useSettings'
 
 const DashboardIcon = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -62,9 +63,10 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname()
   const { user, signOut, loading } = useAuth()
+  const { data: profile } = useProfile()
 
   const initials = user?.email?.slice(0, 1).toUpperCase() ?? 'U'
-  const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'User'
+  const displayName = profile?.full_name ?? user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? 'User'
   const displayEmail = user?.email ?? ''
 
   return (

@@ -43,7 +43,7 @@ export function usePlaidConnect() {
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { open, ready } = usePlaidLink({
-    token: linkToken ?? '',
+    token: linkToken,
     onSuccess: async (public_token, metadata) => {
       setStatus('connecting')
       try {
@@ -117,14 +117,18 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: async ({ fullName, email, currentEmail }: UpdateProfileVars) => {
       const emailChanged = email.trim() !== currentEmail.trim()
+      const supabase = createClient()
 
       if (emailChanged) {
-        const supabase = createClient()
         const { error } = await supabase.auth.updateUser({ email: email.trim() })
         if (error) throw new Error(error.message)
       }
 
-      await api.auth.updateProfile({ full_name: fullName.trim() || undefined })
+      const trimmedName = fullName.trim() || undefined
+      await Promise.all([
+        api.auth.updateProfile({ full_name: trimmedName }),
+        supabase.auth.updateUser({ data: { full_name: trimmedName ?? null } }),
+      ])
 
       return { emailChanged }
     },
