@@ -5,6 +5,7 @@ from sqlalchemy import text
 
 from app.db.session import engine
 from app.routers.auth import router as auth_router
+from app.routers.transactions import router as transactions_router
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app.add_middleware(
 
 
 app.include_router(auth_router)
+app.include_router(transactions_router)
 
 
 @app.get("/health")
