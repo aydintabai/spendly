@@ -29,14 +29,18 @@ async def _save_message(
     return msg
 
 
+import logging
+
+_log = logging.getLogger("spendly.agent")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s", datefmt="%H:%M:%S")
+
+
 async def stream_chat(
     db: AsyncSession,
     user_id: uuid.UUID,
     message: str,
 ) -> AsyncIterator[str]:
-    import logging
-    logger = logging.getLogger(__name__)
-
+    _log.info(">> %s", message)
     await _save_message(db, user_id, "user", message)
 
     executor = create_executor(user_id)
@@ -47,15 +51,16 @@ async def stream_chat(
             {"messages": [HumanMessage(content=message)]},
             stream_mode="messages",
         ):
-            logger.debug(
-                "stream chunk: node=%s type=%s has_tool_calls=%s content=%r",
-                metadata.get("langgraph_node"),
-                type(msg).__name__,
-                bool(getattr(msg, "tool_call_chunks", None)),
-                getattr(msg, "content", "")[:80] if hasattr(msg, "content") else "",
-            )
+            node = metadata.get("langgraph_node")
+            if node == "tools" and hasattr(msg, "content"):
+                _log.info("   tool ← %s", str(msg.content)[:120])
+            elif node == "model" and isinstance(msg, AIMessageChunk) and msg.tool_call_chunks:
+                for chunk in msg.tool_call_chunks:
+                    if chunk.get("name"):
+                        _log.info("   tool → %s(%s)", chunk["name"], chunk.get("args", "")[:80])
+
             if (
-                metadata.get("langgraph_node") == "model"
+                node == "model"
                 and isinstance(msg, AIMessageChunk)
                 and not msg.tool_call_chunks
             ):
@@ -74,18 +79,18 @@ async def stream_chat(
                     collected_tokens.append(token)
                     yield f"data: {json.dumps({'token': token})}\n\n"
     except Exception as exc:
-        logger.exception("stream_chat agent error: %s", exc)
+        _log.error("!! agent error: %s", exc)
         error_token = f"Sorry, I ran into an error: {exc}"
         yield f"data: {json.dumps({'token': error_token})}\n\n"
         yield "data: [DONE]\n\n"
         return
 
     full_response = "".join(collected_tokens)
-    logger.info("stream_chat complete: %d tokens, %d chars", len(collected_tokens), len(full_response))
     if full_response:
+        _log.info("<< %s", full_response[:120])
         await _save_message(db, user_id, "assistant", full_response)
-    elif not collected_tokens:
-        logger.warning("stream_chat: no tokens collected for message=%r", message)
+    else:
+        _log.warning("!! no response generated")
         fallback = "I wasn't able to generate a response. Please try again."
         yield f"data: {json.dumps({'token': fallback})}\n\n"
 
