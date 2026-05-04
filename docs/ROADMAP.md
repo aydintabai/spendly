@@ -34,7 +34,7 @@ PLAID_ENV=sandbox
 
 # Frontend
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
@@ -42,7 +42,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ### Step 2 — Supabase Project (~15 min)
 1. Go to supabase.com → New project → name it `spendly`
-2. Copy your Project URL and anon key into `.env.example`
+2. Copy your Project URL and publishable key into `.env.example`
 3. Go to Settings → API → copy `service_role` key
 4. Go to Authentication → Providers → confirm Email enabled
 5. Go to Authentication → URL Configuration → add `http://localhost:3000/api/auth/callback` to Redirect URLs
@@ -113,7 +113,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     supabase_url: str
-    supabase_anon_key: str
+    supabase_publishable_key: str
     supabase_service_role_key: str
     google_api_key: str
     plaid_client_id: str = ""
@@ -278,7 +278,7 @@ import { createBrowserClient } from '@supabase/ssr'
 export const createClient = () =>
   createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
   )
 ```
 
@@ -291,7 +291,7 @@ export const createClient = () => {
   const cookieStore = cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     { cookies: { getAll: () => cookieStore.getAll() } }
   )
 }
