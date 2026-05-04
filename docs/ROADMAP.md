@@ -225,22 +225,7 @@ Verify tables exist in Supabase dashboard → Table Editor.
 
 ---
 
-### Step 5 — Seed Mock Data (~20 min)
-
-Write `app/db/seed.py` — insert 1 mock user profile, 2 accounts, and 80-100 transactions spread across:
-- Last 3 months of dates
-- All 8 categories
-- Mix of amounts ($3 coffee → $200 grocery run)
-- 4-5 obvious recurring subscriptions (Netflix $15.99, Spotify $9.99, etc.)
-- 1-2 obvious anomalies (a $450 charge in a normally low-spend category)
-
-```bash
-uv run python -m app.db.seed
-```
-
----
-
-### Step 6 — Frontend Scaffold (~30 min)
+### Step 5 — Frontend Scaffold (~30 min)
 
 ```bash
 cd .. && npx create-next-app@latest frontend --typescript --tailwind --app --no-src-dir
@@ -368,13 +353,13 @@ npm run dev
 # http://localhost:3000 → loads without errors
 ```
 
-**✅ Phase 1 Complete — both servers running, DB seeded, end-to-end verified.**
+**✅ Phase 1 Complete — both servers running, Plaid sandbox ready to connect, end-to-end verified.**
 
 ---
 
 ## Phase 2 — Core Features
 
-### Step 7 — Auth Pages (~30 min)
+### Step 6 — Auth Pages (~30 min)
 
 Build `(auth)/login/page.tsx` and `(auth)/signup/page.tsx`:
 - Email + password inputs using shadcn `Input` and `Button`
@@ -394,7 +379,7 @@ export function useAuth() {
 
 ---
 
-### Step 8 — Transaction API Endpoints (~45 min)
+### Step 7 — Transaction API Endpoints (~45 min)
 
 **`app/schemas/transaction.py`:**
 ```python
@@ -453,7 +438,7 @@ Test all endpoints with a REST client before moving to frontend.
 
 ---
 
-### Step 9 — Dashboard Page (~1.5 hrs)
+### Step 8 — Dashboard Page (~1.5 hrs)
 
 **`lib/api.ts`** — typed fetch wrapper:
 ```typescript
@@ -486,7 +471,7 @@ Wire up `(app)/dashboard/page.tsx` — compose all components, handle loading st
 
 ---
 
-### Step 10 — Transactions Page (~45 min)
+### Step 9 — Transactions Page (~45 min)
 
 Build `FilterBar.tsx`:
 - Category `Select` dropdown from `CATEGORY_CONFIG` keys
@@ -504,7 +489,7 @@ Wire up `(app)/transactions/page.tsx`.
 
 ---
 
-### Step 11 — LangChain Agent Setup (~1 hr)
+### Step 10 — LangChain Agent Setup (~1 hr)
 
 **`app/agent/prompts.py`:**
 ```python
@@ -573,7 +558,7 @@ print(result["output"])
 
 ## Phase 3 — Agentic Layer + Polish
 
-### Step 12 — Chat API + Streaming (~1 hr)
+### Step 11 — Chat API + Streaming (~1 hr)
 
 **`app/routers/agent.py`** — three endpoints:
 
@@ -612,7 +597,7 @@ async def analyze(user = Depends(get_current_user)):
 
 ---
 
-### Step 13 — Chat Frontend (~45 min)
+### Step 12 — Chat Frontend (~45 min)
 
 **`hooks/useChat.ts`** — SSE stream handler:
 ```typescript
@@ -646,7 +631,7 @@ Wire up `(app)/chat/page.tsx` — left context panel + right chat panel.
 
 ---
 
-### Step 14 — Full Analysis Feature (~30 min)
+### Step 13 — Full Analysis Feature (~30 min)
 
 Add "Run AI Analysis" button to dashboard — triggers `POST /agent/analyze`.
 
@@ -662,7 +647,7 @@ Show loading state while analysis runs (this takes 10-20 seconds — add a progr
 
 ---
 
-### Step 15 — Settings Pages (~20 min)
+### Step 14 — Settings Pages (~20 min)
 
 `settings/profile/page.tsx` — `ProfileForm.tsx`:
 - Name and email fields (pre-populated from Supabase user)
@@ -675,7 +660,7 @@ Show loading state while analysis runs (this takes 10-20 seconds — add a progr
 
 ---
 
-### Step 16 — Polish (~30 min)
+### Step 15 — Polish (~30 min)
 
 Global polish pass in this order:
 - Add `Skeleton` to every component that fetches data
@@ -687,7 +672,7 @@ Global polish pass in this order:
 
 ---
 
-### Step 17 — Plaid Integration (~3 hrs)
+### Step 16 — Plaid Integration (~3 hrs)
 
 1. Create Plaid account at dashboard.plaid.com → get sandbox keys
 2. Add keys to `.env`

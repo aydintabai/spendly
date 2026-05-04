@@ -52,8 +52,7 @@ spendly/
 │       │   └── base.py             # DeclarativeBase + TimestampMixin
 │       ├── schemas/                # Pydantic v2 schemas (API contracts — separate from models)
 │       └── db/
-│           ├── session.py          # Async engine, SessionLocal, get_db()
-│           └── seed.py             # Mock data seeder
+│           └── session.py          # Async engine, SessionLocal, get_db()
 ├── frontend/
 │   ├── app/
 │   │   ├── (auth)/                 # Route group — centered layout, no sidebar
@@ -318,7 +317,6 @@ cd backend
 uv sync
 uv run uvicorn app.main:app --reload --port 8000
 uv run alembic upgrade head
-uv run python -m app.db.seed
 uv run pytest
 ```
 

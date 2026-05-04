@@ -159,8 +159,7 @@ spendly/
 │   │   │   ├── plaid.py                     # LinkTokenResponse, ExchangeTokenRequest
 │   │   │   └── common.py                    # PaginatedResponse, ErrorResponse
 │   │   └── db/
-│   │       ├── session.py                   # Async engine, SessionLocal, get_db()
-│   │       └── seed.py                      # Mock data seeder script
+│   │       └── session.py                   # Async engine, SessionLocal, get_db()
 │   ├── alembic/
 │   │   ├── versions/
 │   │   └── env.py
@@ -268,7 +267,7 @@ transactions (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID REFERENCES profiles(id),
   account_id      UUID REFERENCES accounts(id),
-  plaid_txn_id    TEXT UNIQUE,            -- null for mock data
+  plaid_txn_id    TEXT UNIQUE,            -- populated after Plaid sync
   merchant_name   TEXT NOT NULL,
   amount          NUMERIC(12,2) NOT NULL, -- negative = expense
   category        TEXT NOT NULL,
@@ -333,7 +332,7 @@ chat_messages (
 
 **Acceptance Criteria:**
 - [ ] All cards populated from real DB data
-- [ ] Charts render correctly with mock or Plaid data
+- [ ] Charts render correctly with Plaid sandbox data
 - [ ] AI insight card generates on load without user prompt
 - [ ] Skeleton states shown during data fetch
 
@@ -406,7 +405,7 @@ chat_messages (
 **Acceptance Criteria:**
 - [ ] Full OAuth flow completes without error
 - [ ] Transactions appear in dashboard after sync
-- [ ] Graceful fallback to mock data if Plaid not connected
+- [ ] Graceful empty state if Plaid not yet connected
 
 ---
 
@@ -581,7 +580,6 @@ shadcn/ui components: `Card`, `Table`, `Badge`, `Input`, `Button`, `Select`, `Sc
 - [ ] Monorepo setup with uv + Next.js
 - [ ] Supabase project + schema migration
 - [ ] FastAPI scaffold with `/health`
-- [ ] Seed script (50-100 mock transactions)
 - [ ] Next.js auth pages + Supabase client
 - [ ] Verify end-to-end connectivity
 
@@ -609,7 +607,6 @@ shadcn/ui components: `Card`, `Table`, `Badge`, `Input`, `Button`, `Select`, `Sc
 | DB Schema | Generated initial schema | accounts/transactions structure | Added plaid_txn_id, adjusted types |
 | Tool Definitions | Generated @tool stubs | Function signatures | Wrote actual query logic manually |
 | Frontend Components | Generated StatCard, ChatWindow | Layout and Tailwind classes | Color tokens, streaming logic |
-| Seed Data | Generated 80 realistic transactions | All of it | Added more edge cases |
 
 ---
 

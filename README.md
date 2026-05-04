@@ -91,7 +91,7 @@ spendly/
 │   │   ├── agent/                  # LangChain agent, tools, prompts
 │   │   ├── models/                 # SQLAlchemy ORM models
 │   │   ├── schemas/                # Pydantic request/response schemas
-│   │   └── db/                     # Session, seeder
+│   │   └── db/                     # Session factory
 │   ├── alembic/                    # DB migrations
 │   ├── tests/
 │   └── pyproject.toml
@@ -123,7 +123,7 @@ spendly/
 - [uv](https://docs.astral.sh/uv/) installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 - Supabase account
 - Google AI Studio API key
-- Plaid account (optional — app runs with mock data without it)
+- Plaid account (required for transaction data — use sandbox credentials)
 
 ### 1. Clone the repo
 ```bash
@@ -144,7 +144,6 @@ Fill in the required values (see [Environment Variables](#environment-variables)
 cd backend
 uv sync
 uv run alembic upgrade head
-uv run python -m app.db.seed       # seed mock transaction data
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
