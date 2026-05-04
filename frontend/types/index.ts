@@ -69,6 +69,12 @@ export interface TransactionFilter {
   page_size?: number
 }
 
+export interface MonthlyTotal {
+  month: string
+  total_spent: string
+  total_income: string
+}
+
 export interface Profile {
   id: string
   email: string
