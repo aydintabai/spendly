@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.db.session import engine
+from app.routers.agent import router as agent_router
 from app.routers.auth import router as auth_router
 from app.routers.transactions import router as transactions_router
 
@@ -29,6 +30,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(transactions_router)
+app.include_router(agent_router)
 
 
 @app.get("/health")
