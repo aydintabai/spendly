@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     supabase_url: str
     supabase_publishable_key: str
@@ -9,8 +10,10 @@ class Settings(BaseSettings):
     plaid_client_id: str = ""
     plaid_secret: str = ""
     plaid_env: str = "sandbox"
+    debug: bool = False
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()
